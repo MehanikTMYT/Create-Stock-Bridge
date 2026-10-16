@@ -1,10 +1,13 @@
 package com.tom.stockbridge.ae;
 
+import com.simibubi.create.foundation.utility.ValueIo;
+import net.minecraft.world.level.storage.TagValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import net.createmod.catnip.data.Pair;
+import net.createmod.catnip.api.data.Pair;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
@@ -87,21 +90,24 @@ IGridConnectedBlockEntity, IPriorityHost, IStorageProvider, ICraftingProvider, I
 		return GridHelper.createManagedNode(this, BlockEntityNodeListener.INSTANCE);
 	}
 
+	// PORT(26.1): AE2 serializes through ValueOutput/ValueInput while Create's block entities still hand out a
+	// CompoundTag; Create's ValueIo bridges the two and the result is merged into the same flat tag as before.
 	@Override
 	protected void write(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
 		super.write(tag, registries, clientPacket);
 		if(!clientPacket) {
-			this.getMainNode().saveToNBT(tag);
-			tag.putInt("priority", this.getPriority());
-			this.craftingTracker.writeToNBT(tag);
+			TagValueOutput out = ValueIo.output(registries);
+			this.getMainNode().serialize(out);
+			out.putInt("priority", this.getPriority());
+			this.craftingTracker.writeToNBT(out);
 
-			ListTag list = new ListTag();
+			var list = out.childrenList("requests");
 			for (final Object2LongMap.Entry<AEKey> input : itemRequests) {
-				CompoundTag t = input.getKey().toTagGeneric(registries);
+				var t = list.addChild();
+				input.getKey().toTagGeneric(t);
 				t.putLong("cnt", input.getLongValue());
-				list.add(t);
 			}
-			tag.put("requests", list);
+			tag.merge(ValueIo.finish(out));
 		}
 	}
 
@@ -109,17 +115,17 @@ IGridConnectedBlockEntity, IPriorityHost, IStorageProvider, ICraftingProvider, I
 	protected void read(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
 		super.read(tag, registries, clientPacket);
 		if(!clientPacket) {
-			this.getMainNode().loadFromNBT(tag);
-			this.priority = tag.getInt("priority");
-			this.craftingTracker.readFromNBT(tag);
+			ValueInput in = ValueIo.input(registries, tag);
+			this.getMainNode().deserialize(in);
+			this.priority = in.getIntOr("priority", 0);
+			this.craftingTracker.readFromNBT(in);
 
 			itemRequests.clear();
-			ListTag list = tag.getList("requests", Tag.TAG_COMPOUND);
-			for(int i = 0; i < list.size(); ++i) {
-				var t = list.getCompound(i);
-				var key = AEKey.fromTagGeneric(registries, t);
-				long value = t.getLong("cnt");
-				itemRequests.add(key, value);
+			for (ValueInput t : in.childrenListOrEmpty("requests")) {
+				var key = AEKey.fromTagGeneric(t);
+				if (key != null) {
+					itemRequests.add(key, t.getLongOr("cnt", 0L));
+				}
 			}
 		}
 	}
@@ -165,7 +171,7 @@ IGridConnectedBlockEntity, IPriorityHost, IStorageProvider, ICraftingProvider, I
 		if (this.level == null) {
 			return;
 		}
-		if (this.level.isClientSide) {
+		if (this.level.isClientSide()) {
 			this.setChanged();
 		} else {
 			this.level.blockEntityChanged(this.worldPosition);
@@ -221,7 +227,7 @@ IGridConnectedBlockEntity, IPriorityHost, IStorageProvider, ICraftingProvider, I
 	@Override
 	public void tick() {
 		super.tick();
-		if (!level.isClientSide && level.getGameTime() % 20 == Math.abs(worldPosition.hashCode()) % 20) {
+		if (!level.isClientSide() && level.getGameTime() % 20 == Math.abs(worldPosition.hashCode()) % 20) {
 			items = behaviour.getItems();
 			remountStorage();//TODO improve speed
 
@@ -250,7 +256,7 @@ IGridConnectedBlockEntity, IPriorityHost, IStorageProvider, ICraftingProvider, I
 
 		@Override
 		public Component getDescription() {
-			return AERegistration.BRIDGE_BLOCK.asItem().getDescription();
+			return AERegistration.BRIDGE_BLOCK.get().getName();
 		}
 
 		@Override

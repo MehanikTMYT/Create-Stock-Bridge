@@ -1,5 +1,7 @@
 package com.tom.stockbridge.ae;
 
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -14,7 +16,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -51,7 +53,7 @@ public class AERemoteItemKey extends AEKey {
 							item -> item.is(Items.AIR.builtInRegistryHolder())
 							? DataResult.error(() -> "Item must not be minecraft:air")
 									: DataResult.success(item))
-					.fieldOf("id").forGetter(key -> key.stack.getItemHolder()),
+					.fieldOf("id").forGetter(key -> key.stack.typeHolder()),
 					DataComponentPatch.CODEC.optionalFieldOf("components", DataComponentPatch.EMPTY)
 					.forGetter(key -> key.stack.getComponentsPatch()))
 			.apply(builder, (item, componentPatch) -> new AERemoteItemKey(new ItemStack(item, 1, componentPatch))));
@@ -162,22 +164,15 @@ public class AERemoteItemKey extends AEKey {
 		return stack.getItem();
 	}
 
+	// PORT(26.1): keys serialize through ValueInput/ValueOutput, like AE2's AEItemKey.
 	@Nullable
-	public static AERemoteItemKey fromTag(HolderLookup.Provider registries, CompoundTag tag) {
-		var ops = registries.createSerializationContext(NbtOps.INSTANCE);
-		try {
-			return CODEC.decode(ops, tag).getOrThrow().getFirst();
-		} catch (Exception e) {
-			AELog.debug("Tried to load an invalid item key from NBT: %s", tag, e);
-			return null;
-		}
+	public static AERemoteItemKey fromTag(ValueInput input) {
+		return input.read(MAP_CODEC).orElse(null);
 	}
 
 	@Override
-	public CompoundTag toTag(HolderLookup.Provider registries) {
-		var ops = registries.createSerializationContext(NbtOps.INSTANCE);
-		return (CompoundTag) CODEC.encodeStart(ops, this)
-				.getOrThrow();
+	public void toTag(ValueOutput output) {
+		output.store(MAP_CODEC, this);
 	}
 
 	@Override
@@ -202,7 +197,7 @@ public class AERemoteItemKey extends AEKey {
 	}
 
 	@Override
-	public ResourceLocation getId() {
+	public Identifier getId() {
 		return BuiltInRegistries.ITEM.getKey(stack.getItem());
 	}
 

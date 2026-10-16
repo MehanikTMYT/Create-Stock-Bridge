@@ -1,5 +1,7 @@
 package com.tom.stockbridge.util;
 
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import org.jetbrains.annotations.NotNull;
 
 import net.minecraft.core.HolderLookup;
@@ -83,15 +85,14 @@ public class StockBridgeInventory implements IItemHandler, BridgeInventory {
 		return be;
 	}
 
-	public void read(CompoundTag compound, HolderLookup.Provider registries) {
-		insert.fromTag(compound.getList("in", Tag.TAG_COMPOUND), registries);
-		extract.fromTag(compound.getList("out", Tag.TAG_COMPOUND), registries);
+	// PORT(26.1): containers serialize as typed item lists through ValueInput/ValueOutput.
+	public void read(ValueInput input) {
+		insert.fromItemList(input.listOrEmpty("in", ItemStack.CODEC));
+		extract.fromItemList(input.listOrEmpty("out", ItemStack.CODEC));
 	}
 
-	public CompoundTag write(HolderLookup.Provider registries) {
-		CompoundTag tag = new CompoundTag();
-		tag.put("in", insert.createTag(registries));
-		tag.put("out", extract.createTag(registries));
-		return tag;
+	public void write(ValueOutput output) {
+		insert.storeAsItemList(output.list("in", ItemStack.CODEC));
+		extract.storeAsItemList(output.list("out", ItemStack.CODEC));
 	}
 }

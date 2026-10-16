@@ -1,8 +1,8 @@
 package com.tom.stockbridge.client;
 
-import net.createmod.ponder.api.registration.PonderPlugin;
-import net.createmod.ponder.api.registration.PonderSceneRegistrationHelper;
-import net.minecraft.resources.ResourceLocation;
+import net.createmod.ponder.api.client.registration.PonderPlugin;
+import net.createmod.ponder.api.client.registration.PonderSceneRegistrationHelper;
+import net.minecraft.resources.Identifier;
 
 import com.tterrag.registrate.util.entry.BlockEntry;
 
@@ -17,7 +17,7 @@ public class SBPonderPlugin implements PonderPlugin {
 	}
 
 	@Override
-	public void registerScenes(PonderSceneRegistrationHelper<ResourceLocation> helper) {
+	public void registerScenes(PonderSceneRegistrationHelper<Identifier> helper) {
 		PonderSceneRegistrationHelper<BlockEntry<?>> HELPER = helper.withKeyFunction(BlockEntry::getId);
 
 		AEClientRegistration.registerPonder(HELPER);

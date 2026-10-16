@@ -31,7 +31,7 @@ public class StockBridge {
 		// Register the doClientStuff method for modloading
 		bus.addListener(this::doClientStuff);
 		bus.addListener(this::registerCapabilities);
-		if (FMLEnvironment.dist == Dist.CLIENT)StockBridgeClient.preInit(mc, bus);
+		if (FMLEnvironment.getDist() == Dist.CLIENT)StockBridgeClient.preInit(mc, bus);
 		bus.register(NetworkHandler.class);
 
 		registrate = CreateRegistrate.create(MODID).registerEventListeners(bus);

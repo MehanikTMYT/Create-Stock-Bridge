@@ -1,5 +1,6 @@
 package com.tom.stockbridge.ae;
 
+import net.minecraft.world.level.storage.ValueInput;
 import java.util.Objects;
 import java.util.stream.Stream;
 
@@ -8,7 +9,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagKey;
 
 import com.mojang.serialization.MapCodec;
@@ -19,7 +20,7 @@ import appeng.api.stacks.AEKey;
 import appeng.api.stacks.AEKeyType;
 
 public class RemoteItemKeyType extends AEKeyType {
-	private static final ResourceLocation ID = ResourceLocation.tryBuild(StockBridge.MODID, "ri");
+	private static final Identifier ID = Identifier.tryBuild(StockBridge.MODID, "ri");
 	public static final RemoteItemKeyType INSTANCE = new RemoteItemKeyType();
 
 	private RemoteItemKeyType() {
@@ -33,8 +34,8 @@ public class RemoteItemKeyType extends AEKeyType {
 	}
 
 	@Override
-	public AERemoteItemKey loadKeyFromTag(HolderLookup.Provider registries, final CompoundTag tag) {
-		return AERemoteItemKey.fromTag(registries, tag);
+	public AERemoteItemKey loadKeyFromTag(ValueInput input) {
+		return AERemoteItemKey.fromTag(input);
 	}
 
 	@Override
@@ -44,7 +45,7 @@ public class RemoteItemKeyType extends AEKeyType {
 
 	@Override
 	public Stream<TagKey<?>> getTagNames() {
-		return BuiltInRegistries.ITEM.getTagNames().map(t -> t);
+		return BuiltInRegistries.ITEM.listTagIds().map(t -> t);
 	}
 
 	@Override

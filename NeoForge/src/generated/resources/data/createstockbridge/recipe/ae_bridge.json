@@ -3,24 +3,12 @@
   "category": "misc",
   "group": "create",
   "key": {
-    "I": {
-      "item": "ae2:interface"
-    },
-    "b": {
-      "tag": "c:plates/brass"
-    },
-    "e": {
-      "item": "ae2:engineering_processor"
-    },
-    "i": {
-      "tag": "c:plates/iron"
-    },
-    "s": {
-      "item": "create:stock_link"
-    },
-    "t": {
-      "item": "create:stock_ticker"
-    }
+    "I": "ae2:interface",
+    "b": "#c:plates/brass",
+    "e": "ae2:engineering_processor",
+    "i": "#c:plates/iron",
+    "s": "create:stock_link",
+    "t": "create:stock_ticker"
   },
   "pattern": [
     "bsb",
@@ -28,7 +16,6 @@
     "iti"
   ],
   "result": {
-    "count": 1,
     "id": "createstockbridge:ae_bridge"
   }
 }

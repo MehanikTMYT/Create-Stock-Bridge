@@ -2,9 +2,9 @@ package com.tom.stockbridge.ae.menu;
 
 import org.jetbrains.annotations.Nullable;
 
-import net.createmod.catnip.gui.ScreenOpener;
-import net.createmod.ponder.foundation.ui.PonderUI;
-import net.minecraft.client.gui.GuiGraphics;
+import net.createmod.catnip.api.client.gui.ScreenOpener;
+import net.createmod.ponder.impl.client.gui.PonderUI;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
@@ -40,10 +40,10 @@ public class AEStockBridgeScreen extends AEBaseScreen<AEStockBridgeMenu> {
 	}
 
 	@Override
-	public void drawBG(final GuiGraphics guiGraphics, final int offsetX, final int offsetY, final int mouseX,
+	public void drawBG(final GuiGraphicsExtractor guiGraphics, final int offsetX, final int offsetY, final int mouseX,
 			final int mouseY, final float partialTicks) {
 		super.drawBG(guiGraphics, offsetX, offsetY, mouseX, mouseY, partialTicks);
-		this.address.render(guiGraphics, mouseX, mouseY, partialTicks);
+		this.address.extractRenderState(guiGraphics, mouseX, mouseY, partialTicks);
 	}
 
 	@Override

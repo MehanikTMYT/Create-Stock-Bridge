@@ -1,27 +1,33 @@
 package com.tom.stockbridge.ae;
 
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.item.ItemStackRenderState;
+import net.minecraft.world.entity.ItemOwner;
+import net.minecraft.world.phys.Vec3;
+import org.jspecify.annotations.Nullable;
 import java.util.List;
 
 import org.joml.Matrix4f;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import net.createmod.catnip.math.Pointing;
-import net.createmod.ponder.api.PonderPalette;
-import net.createmod.ponder.api.element.ElementLink;
-import net.createmod.ponder.api.element.WorldSectionElement;
-import net.createmod.ponder.api.registration.PonderSceneRegistrationHelper;
-import net.createmod.ponder.api.scene.SceneBuilder;
-import net.createmod.ponder.api.scene.SceneBuildingUtil;
+import net.createmod.catnip.api.math.Pointing;
+import net.createmod.ponder.api.client.PonderPalette;
+import net.createmod.ponder.api.client.element.ElementLink;
+import net.createmod.ponder.api.client.element.WorldSectionElement;
+import net.createmod.ponder.api.client.registration.PonderSceneRegistrationHelper;
+import net.createmod.ponder.api.client.scene.SceneBuilder;
+import net.createmod.ponder.api.client.scene.SceneBuildingUtil;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemDisplayContext;
@@ -44,77 +50,101 @@ import com.tterrag.registrate.util.entry.BlockEntry;
 
 import com.tom.stockbridge.StockBridge;
 
-import appeng.api.client.AEKeyRenderHandler;
-import appeng.api.client.AEKeyRendering;
+import appeng.client.api.AEKeyRenderer;
+import appeng.client.api.AEKeyRendering;
 
 public class AEClientRegistration {
 	private static final Logger LOG = LoggerFactory.getLogger(AEClientRegistration.class);
 
 	public static void register() {
-		AEKeyRendering.register(RemoteItemKeyType.INSTANCE, AERemoteItemKey.class, new AEKeyRenderHandler<AERemoteItemKey>() {
-			private final Component REMOTE_INFO = Component.translatable("tooltip.stockbridge.remote_item");
+		AEKeyRendering.register(RemoteItemKeyType.INSTANCE, AERemoteItemKey.class, new RemoteItemKeyRenderer());
+	}
 
-			@Override
-			public void drawInGui(Minecraft minecraft, GuiGraphics guiGraphics, int x, int y, AERemoteItemKey stack) {
-				var poseStack = guiGraphics.pose();
-				poseStack.pushPose();
+	/**
+	 * PORT(26.1): AE2's key renderers are split into a GUI draw and an extract/submit pair for in-world rendering
+	 * (render states), mirroring AE2's own ItemKeyRenderer.
+	 */
+	private static class RemoteItemKeyRenderer implements AEKeyRenderer<AERemoteItemKey, ItemStackRenderState> {
+		private static final Component REMOTE_INFO = Component.translatable("tooltip.stockbridge.remote_item");
+		private static final Identifier REMOTE_ICON = Identifier.fromNamespaceAndPath(StockBridge.MODID, "textures/gui/remote_item.png");
 
-				var displayStack = stack.getReadOnlyStack();
-				guiGraphics.renderItem(displayStack, x, y);
-				guiGraphics.renderItemDecorations(minecraft.font, displayStack, x, y, "");
+		@Override
+		public void drawInGui(Minecraft minecraft, GuiGraphicsExtractor guiGraphics, int x, int y, AERemoteItemKey stack) {
+			var poseStack = guiGraphics.pose();
+			poseStack.pushMatrix();
+			var displayStack = stack.getReadOnlyStack();
+			guiGraphics.item(displayStack, x, y);
+			guiGraphics.itemDecorations(minecraft.font, displayStack, x, y, "");
+			poseStack.translate(x + 10.5f, y);
+			poseStack.scale(0.33f, 0.33f);
+			guiGraphics.blit(RenderPipelines.GUI_TEXTURED, REMOTE_ICON, 0, 0, 0, 0, 16, 16, 16, 16);
+			poseStack.popMatrix();
+		}
 
-				poseStack.translate(x + 10.5f, y, 200);
-				poseStack.scale(0.33f, 0.33f, 1);
+		@Override
+		public Class<ItemStackRenderState> stateClass() {
+			return ItemStackRenderState.class;
+		}
 
-				guiGraphics.blit(ResourceLocation.tryBuild(StockBridge.MODID, "textures/gui/remote_item.png"), 0, 0, 0, 0, 0, 16, 16, 16, 16);
+		@Override
+		public ItemStackRenderState createState() {
+			return new ItemStackRenderState();
+		}
 
-				poseStack.popPose();
+		@Override
+		public void extract(ItemStackRenderState state, AERemoteItemKey what, @Nullable Level level, int seed) {
+			Minecraft.getInstance().getItemModelResolver().updateForTopItem(state, what.getReadOnlyStack(),
+					ItemDisplayContext.GUI, level, new ItemOwner() {
+						@Override
+						public Level level() {
+							return level;
+						}
+
+						@Override
+						public Vec3 position() {
+							return Vec3.ZERO;
+						}
+
+						@Override
+						public float getVisualRotationYInDegrees() {
+							return 0;
+						}
+					}, seed);
+		}
+
+		@Override
+		public void submit(PoseStack poseStack, ItemStackRenderState state, SubmitNodeCollector nodes, int lightCoords) {
+			poseStack.pushPose();
+			// Push it out of the block face a bit to avoid z-fighting
+			poseStack.translate(0, 0, 0.01f);
+			// The Z-scaling by 0.001 causes the model to be visually "flattened"
+			// This cannot replace a proper projection, but it's cheap and gives the desired effect.
+			// We don't scale the normal matrix to avoid lighting issues.
+			poseStack.mulPose(new Matrix4f().scale(1, 1, 0.001f));
+			// Rotate the normal matrix a little for nicer lighting.
+			poseStack.last().normal().rotateX(Mth.DEG_TO_RAD * -45f);
+			state.submit(poseStack, nodes, lightCoords, OverlayTexture.NO_OVERLAY, 0);
+			poseStack.popPose();
+		}
+
+		@Override
+		public List<Component> getTooltip(AERemoteItemKey stack) {
+			try {
+				List<Component> l = stack.getReadOnlyStack().getTooltipLines(
+						Item.TooltipContext.of(Minecraft.getInstance().level),
+						Minecraft.getInstance().player,
+						Minecraft.getInstance().options.advancedItemTooltips ? TooltipFlag.Default.ADVANCED
+								: TooltipFlag.Default.NORMAL);
+				l.add(REMOTE_INFO);
+				return l;
+			} catch (Exception e) {
+				LOG.error("Getting the tooltip of item {} crashed!", stack.getId(), e);
+				return List.of(
+						stack.getDisplayName(),
+						Component.literal(stack.getId().toString()),
+						Component.literal("GETTING TOOLTIP CRASHED").withStyle(ChatFormatting.RED));
 			}
-
-			@Override
-			public void drawOnBlockFace(PoseStack poseStack, MultiBufferSource buffers, AERemoteItemKey what, float scale,
-					int combinedLight, Level level) {
-				poseStack.pushPose();
-				// Push it out of the block face a bit to avoid z-fighting
-				poseStack.translate(0, 0, 0.01f);
-				// The Z-scaling by 0.001 causes the model to be visually "flattened"
-				// This cannot replace a proper projection, but it's cheap and gives the desired effect.
-				// We don't scale the normal matrix to avoid lighting issues.
-				poseStack.mulPose(new Matrix4f().scale(scale, scale, 0.001f));
-				// Rotate the normal matrix a little for nicer lighting.
-				poseStack.last().normal().rotateX(Mth.DEG_TO_RAD * -45f);
-
-				Minecraft.getInstance().getItemRenderer().renderStatic(what.getReadOnlyStack(), ItemDisplayContext.GUI,
-						combinedLight, OverlayTexture.NO_OVERLAY, poseStack, buffers, level, 0);
-
-				poseStack.popPose();
-			}
-
-			@Override
-			public Component getDisplayName(AERemoteItemKey stack) {
-				return stack.getDisplayName();
-			}
-
-			@Override
-			public List<Component> getTooltip(AERemoteItemKey stack) {
-				try {
-					List<Component> l = stack.getReadOnlyStack().getTooltipLines(
-							Item.TooltipContext.of(Minecraft.getInstance().level),
-							Minecraft.getInstance().player,
-							Minecraft.getInstance().options.advancedItemTooltips ? TooltipFlag.Default.ADVANCED
-									: TooltipFlag.Default.NORMAL);
-					l.add(REMOTE_INFO);
-					return l;
-				} catch (Exception e) {
-					LOG.error("Getting the tooltip of item {} crashed!", stack.getId(), e);
-					return List.of(
-							stack.getDisplayName(),
-							Component.literal(stack.getId().toString()),
-							Component.literal("GETTING TOOLTIP CRASHED").withStyle(ChatFormatting.RED));
-				}
-			}
-
-		});
+		}
 	}
 
 	public static void registerPonder(PonderSceneRegistrationHelper<BlockEntry<?>> HELPER) {

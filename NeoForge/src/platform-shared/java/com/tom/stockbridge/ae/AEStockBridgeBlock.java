@@ -1,6 +1,8 @@
 package com.tom.stockbridge.ae;
 
-import net.createmod.catnip.data.Iterate;
+import net.minecraft.world.level.redstone.Orientation;
+import org.jspecify.annotations.Nullable;
+import net.createmod.catnip.api.data.Iterate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionResult;
@@ -44,15 +46,12 @@ public class AEStockBridgeBlock extends Block implements IBE<AEStockBridgeBlockE
 		return AERegistration.BRIDGE_TILE.get();
 	}
 
-	@Override
-	public void onRemove(BlockState pState, Level pLevel, BlockPos pPos, BlockState pNewState, boolean pMovedByPiston) {
-		IBE.onRemove(pState, pLevel, pPos, pNewState);
-	}
+	// PORT(26.1): block entity removal is handled by the block entity itself (as in Create's PackagerLinkBlock).
 
 	@Override
 	protected InteractionResult useWithoutItem(BlockState p_60503_, Level pLevel, BlockPos pPos, Player pPlayer,
 			BlockHitResult p_60508_) {
-		if (!pLevel.isClientSide) {
+		if (!pLevel.isClientSide()) {
 			if (pLevel.getBlockEntity(pPos) instanceof AEStockBridgeBlockEntity e)
 				e.openConfigMenu(pPlayer);
 		}
@@ -60,9 +59,9 @@ public class AEStockBridgeBlock extends Block implements IBE<AEStockBridgeBlockE
 	}
 
 	@Override
-	public void neighborChanged(BlockState state, Level worldIn, BlockPos pos, Block blockIn, BlockPos fromPos,
+	public void neighborChanged(BlockState state, Level worldIn, BlockPos pos, Block blockIn, @Nullable Orientation orientation,
 			boolean isMoving) {
-		if (worldIn.isClientSide)
+		if (worldIn.isClientSide())
 			return;
 
 		withBlockEntityDo(worldIn, pos, link -> link.neighborChanged());

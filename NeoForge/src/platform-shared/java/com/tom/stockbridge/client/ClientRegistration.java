@@ -1,6 +1,6 @@
 package com.tom.stockbridge.client;
 
-import net.createmod.ponder.foundation.PonderIndex;
+import net.createmod.ponder.api.client.PonderIndex;
 
 import com.tom.stockbridge.ae.AEClientRegistration;
 

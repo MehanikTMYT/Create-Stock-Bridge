@@ -1,8 +1,10 @@
 package com.tom.stockbridge.ae;
 
+import com.simibubi.create.foundation.utility.ValueIo;
+import net.minecraft.world.level.storage.TagValueOutput;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 
-import net.createmod.catnip.data.Pair;
+import net.createmod.catnip.api.data.Pair;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -38,7 +40,7 @@ public class AEStockBridgeBlockEntity extends AbstractAEStockBridgeBlockEntity {
 	@Override
 	public void tick() {
 		super.tick();
-		if (!level.isClientSide && !inv.isInsertEmpty()) {
+		if (!level.isClientSide() && !inv.isInsertEmpty()) {
 			final IGrid grid = this.getMainNode().getGrid();
 			if (grid != null) {
 				final MEStorage networkInv = grid.getStorageService().getInventory();
@@ -122,7 +124,9 @@ public class AEStockBridgeBlockEntity extends AbstractAEStockBridgeBlockEntity {
 	protected void write(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
 		super.write(tag, registries, clientPacket);
 		if (!clientPacket) {
-			tag.put("inv", inv.write(registries));
+			TagValueOutput out = ValueIo.output(registries);
+			inv.write(out);
+			tag.put("inv", ValueIo.finish(out));
 		}
 	}
 
@@ -130,7 +134,7 @@ public class AEStockBridgeBlockEntity extends AbstractAEStockBridgeBlockEntity {
 	protected void read(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
 		super.read(tag, registries, clientPacket);
 		if (!clientPacket) {
-			inv.read(tag.getCompound("inv"), registries);
+			inv.read(ValueIo.input(registries, tag.getCompoundOrEmpty("inv")));
 		}
 	}
 

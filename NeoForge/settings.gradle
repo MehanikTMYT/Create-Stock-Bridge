@@ -1,14 +1,58 @@
 pluginManagement {
     repositories {
+        mavenLocal()
+        mavenCentral()
         gradlePluginPortal()
-        maven {
-            name = 'NeoForged'
-            url = 'https://maven.neoforged.net/releases'
-        }
+        maven { url = 'https://maven.neoforged.net/releases' }
+    }
+    plugins {
+        id 'net.neoforged.moddev' version '2.0.141'
+        id 'net.neoforged.moddev.repositories' version '2.0.141'
     }
 }
 
 plugins {
-    id 'org.gradle.toolchains.foojay-resolver-convention' version '0.5.0'
+    id 'net.neoforged.moddev.repositories'
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
 }
-rootProject.name = "CreateStockBridge-1.21"
+
+// PORT(26.1.2): every Create/AE2 artifact for this Minecraft version is a local fleet build.
+// exclusiveContent keeps each local repository answering only for the modules it really owns.
+dependencyResolutionManagement {
+    repositories {
+        mavenCentral()
+        // Local AE2 fork (ae-stack/core/Applied-Energistics-2), Create port (worktrees/create-26.1.2)
+        // and EMI port, all installed with publishToMavenLocal.
+        exclusiveContent {
+            forRepository { mavenLocal() }
+            filter {
+                includeModule('org.appliedenergistics', 'appliedenergistics2')
+                includeModule('com.simibubi.create', 'create-26.1.2')
+                includeGroup('dev.emi')
+            }
+        }
+        // Create's hard dependencies: built from their 26.1 sources and vendored in the Create port tree.
+        exclusiveContent {
+            forRepository {
+                maven {
+                    name = 'CreatePortDependencies'
+                    url = uri(createPortMaven)
+                }
+            }
+            filter {
+                includeModule('com.tterrag.registrate', 'Registrate')
+                includeModule('net.createmod.catnip', 'neoforge')
+                includeModule('net.createmod.ponder', 'neoforge')
+                includeModule('dev.engine-room.flywheel', 'flywheel-neoforge')
+                includeModule('dev.engine-room.vanillin', 'vanillin-neoforge')
+            }
+        }
+        maven {
+            name = 'Modmaven'
+            url = uri('https://modmaven.dev/')
+            content { includeGroup 'org.appliedenergistics' }
+        }
+    }
+}
+
+rootProject.name = "CreateStockBridge-26.1.2"

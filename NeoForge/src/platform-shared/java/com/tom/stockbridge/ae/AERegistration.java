@@ -1,5 +1,7 @@
 package com.tom.stockbridge.ae;
 
+import com.simibubi.create.foundation.data.CreateDataProviders;
+import com.tterrag.registrate.providers.generators.ConfiguredModel;
 import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.core.Registry;
@@ -25,7 +27,6 @@ import com.tom.stockbridge.Registration;
 import com.tom.stockbridge.StockBridge;
 import com.tom.stockbridge.ae.menu.AEStockBridgeMenu;
 import com.tom.stockbridge.ae.menu.RemoteItemStrategy;
-import com.tom.stockbridge.data.PlatformDatagen;
 
 import appeng.api.behaviors.ContainerItemStrategies;
 import appeng.api.crafting.IPatternDetails;
@@ -44,16 +45,18 @@ public class AERegistration {
 			.properties(p -> p.noOcclusion())
 			.tag(BlockTags.NEEDS_IRON_TOOL)
 			.transform(TagGen.pickaxeOnly())
-			.blockstate((ctx, prov) -> PlatformDatagen.variantBuilder(ctx, prov, st -> {
+			// PORT(26.1): Registrate's 26.1 model generators, through Create's old-vocabulary adapter.
+			.blockstate(CreateDataProviders.blockstate(() -> (ctx, prov) -> prov.getVariantBuilder(ctx.getEntry()).forAllStates(st -> {
 				boolean pw = st.getValue(AEStockBridgeBlock.POWERED);
-				return prov.models()
-						.getExistingFile(prov.modLoc(pw ? "ae_bridge_powered" : "ae_bridge"));
-			}))
+				return ConfiguredModel.builder()
+						.modelFile(prov.models().getExistingFile(prov.modLoc(pw ? "ae_bridge_powered" : "ae_bridge")))
+						.build();
+			})))
 			.item(LogisticallyLinkedBlockItem::new)
-			.transform(b -> b.model((c, p) -> {
+			.transform(b -> b.model(CreateDataProviders.itemModel(() -> (c, p) -> {
 				p.withExistingParent("ae_bridge",
 						p.modLoc("block/ae_bridge"));
-			}).build())
+			})).build())
 			.lang("AE Stock Bridge")
 			.register();
 

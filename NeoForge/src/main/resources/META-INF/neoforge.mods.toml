@@ -43,7 +43,7 @@ Links the Create Stock network with Applied Energistics
     # Does this dependency have to exist - if not, ordering below must be specified
     type="required"
     # The version range of the dependency
-    versionRange="[21.1,)" #mandatory
+    versionRange="${neo_version_range}" #mandatory
     # An ordering relationship for the dependency - BEFORE or AFTER required if the relationship is not mandatory
     ordering="NONE"
     # Side this dependency is applied on - BOTH, CLIENT or SERVER
@@ -59,13 +59,13 @@ Links the Create Stock network with Applied Energistics
     modId="minecraft"
     type="required"
 # This version range declares a minimum of the current minecraft version up to but not including the next major version
-    versionRange="[1.21,1.21.1]"
+    versionRange="${minecraft_version_range}"
     ordering="NONE"
     side="BOTH"
 [[dependencies.createstockbridge]]
     modId="ae2"
     type="required"
-    versionRange="[19.0.0,)"
+    versionRange="[26.1.0,)"
     ordering="NONE"
     side="BOTH"
     

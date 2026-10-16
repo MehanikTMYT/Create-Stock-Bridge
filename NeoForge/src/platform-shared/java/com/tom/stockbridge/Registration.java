@@ -1,5 +1,6 @@
 package com.tom.stockbridge;
 
+import com.simibubi.create.foundation.data.CreateDataProviders;
 import net.minecraft.world.item.Item;
 
 import com.simibubi.create.foundation.data.CreateRegistrate;
@@ -12,9 +13,9 @@ public class Registration {
 
 	public static final ItemEntry<Item> REQUEST_ITEM = REGISTRATE.item("request_pattern", Item::new)
 			.lang("Request Pattern")
-			.model((c, p) -> {
+			.model(CreateDataProviders.itemModel(() -> (c, p) -> {
 				p.singleTexture("request_pattern", p.mcLoc("item/generated"), "layer0", p.mcLoc("item/barrier"));
-			})
+			}))
 			.register();
 
 	public static void register() {

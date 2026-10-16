@@ -5,7 +5,7 @@ import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import com.tom.stockbridge.ae.menu.AEStockBridgeMenu;
 import com.tom.stockbridge.ae.menu.AEStockBridgeScreen;
 
-import appeng.init.client.InitScreens;
+import appeng.client.InitScreens;
 
 public class AEClientPlatformRegistration {
 

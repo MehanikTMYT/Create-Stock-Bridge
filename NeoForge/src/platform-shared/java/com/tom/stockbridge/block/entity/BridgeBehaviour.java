@@ -7,7 +7,7 @@ import javax.annotation.Nullable;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.joml.Math;
 
-import net.createmod.catnip.data.Pair;
+import net.createmod.catnip.api.data.Pair;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -56,7 +56,7 @@ public class BridgeBehaviour extends LogisticallyLinkedBehaviour {
 	@Override
 	public void initialize() {
 		super.initialize();
-		if (getWorld().isClientSide)
+		if (getWorld().isClientSide())
 			return;
 
 		if (blockEntity instanceof AbstractStockBridgeBlockEntity plbe)
@@ -105,7 +105,7 @@ public class BridgeBehaviour extends LogisticallyLinkedBehaviour {
 	@Override
 	public void read(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
 		super.read(tag, registries, clientPacket);
-		recipeAddress = tag.getString("address");
+		recipeAddress = tag.getStringOr("address", "");
 	}
 
 	public InventorySummary getItems() {
